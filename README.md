@@ -1,5 +1,7 @@
 # 🍳 Dota 2 分锅器
 
+> 仓库：<https://github.com/BerkMOON/dota-blame>
+
 DOTA2 五黑赛后复盘工具。丢一个对局 ID 进去，自动从 OpenDota 拉数据、按号位加权算锅，
 输出一份「分锅判决书」：谁在犯罪、谁在野区把线对、谁在送、谁在躺。
 
