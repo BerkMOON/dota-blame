@@ -1,0 +1,12 @@
+services:
+  dota-blame:
+    build: .
+    container_name: dota-blame
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - CACHE_TTL=300
+    volumes:
+      - ./cache:/app/cache
+    restart: unless-stopped

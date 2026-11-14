@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dota2 分锅器 · 赛后分锅判决书</title>
+<meta name="description" content="DOTA2 五黑赛后分锅工具：输入对局 ID，自动分析谁在犯罪、谁在野区把线对。">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="bg-glow" aria-hidden="true"></div>
+
+<header class="site-header">
+  <a class="logo" href="/"><span class="logo-icon">🍳</span><span>分锅器</span></a>
+  <p class="tagline">DOTA2 五黑赛后复盘 · 输入对局 ID，自动分锅</p>
+</header>
+
+<main class="wrap">
+  <!-- 搜索 -->
+  <section class="card search" id="search-card">
+    <form id="blame-form" autocomplete="off">
+      <div class="field">
+        <label for="match-id">对局 ID（录像编号）</label>
+        <input id="match-id" name="match_id" inputmode="numeric" placeholder="例如 9088291413" required>
+      </div>
+      <div class="field">
+        <label for="user-id">你的 account_id（可选）</label>
+        <input id="user-id" name="user_id" inputmode="numeric" placeholder="例如 181585714">
+      </div>
+      <button class="btn-primary" type="submit" id="submit-btn">开 分</button>
+    </form>
+    <p class="hint">
+      对局 ID = 游戏内「比赛记录」里的那串数字。account_id 是 Steam 的 32 位 ID
+      （Dota 个人资料页 URL 里的数字），留空则默认分析输的一方。
+    </p>
+    <div class="examples">
+      <button class="chip" type="button" data-match="9088291413" data-user="181585714">示例：9088291413（小编这局）</button>
+    </div>
+  </section>
+
+  <!-- 加载 -->
+  <section class="card loading" id="loading" hidden>
+    <div class="spinner" aria-hidden="true"></div>
+    <div class="loading-text">
+      <div class="loading-title" id="loading-title">正在拉取对局数据…</div>
+      <div class="loading-sub" id="loading-sub">首次分析需要几秒，OpenDota 未解析的对局会自动提交解析请求</div>
+    </div>
+  </section>
+
+  <!-- 错误 -->
+  <section class="card error" id="error" hidden>
+    <div class="error-title">😵 出错了</div>
+    <div class="error-msg" id="error-msg"></div>
+  </section>
+
+  <!-- 结果 -->
+  <section id="result" hidden>
+    <div class="card match-bar" id="match-bar"></div>
+    <div class="card verdict" id="verdict"></div>
+    <div class="card board" id="board"></div>
+    <div class="card tabs" id="tabs"></div>
+    <div class="card actions" id="actions"></div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  数据来源 <a href="https://www.opendota.com" target="_blank" rel="noopener">OpenDota</a> ·
+  分锅仅供娱乐，请文明互喷 ·
+  <a href="https://github.com" target="_blank" rel="noopener" class="gh-link">GitHub</a>
+</footer>
+
+<div id="toast" class="toast" hidden></div>
+
+<!-- 分享卡片预览 -->
+<div id="modal" class="modal" hidden>
+  <div class="modal-inner">
+    <div class="modal-head">
+      <span>分享卡片</span>
+      <button class="modal-close" id="modal-close" type="button" aria-label="关闭">×</button>
+    </div>
+    <div class="modal-body" id="modal-body">
+      <div class="spinner small" id="modal-spinner"></div>
+      <img id="modal-img" alt="分锅分享卡片" hidden>
+    </div>
+    <div class="modal-foot">
+      <a class="btn-secondary" id="modal-download" download="dota-blame.png">下载图片</a>
+      <span class="modal-tip">手机端可长按图片保存</span>
+    </div>
+  </div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
