@@ -623,8 +623,9 @@ def verdict_text(r, ts):
 
 
 def extra_rank(rows, slot, key):
-    """某玩家在团队某 extra 指标中的排名（1 = 最高）"""
-    vals = sorted(((r["p"]["player_slot"], r["extra"].get(key) or 0) for r in rows),
+    """某玩家在团队某 extra 指标中的排名（1 = 最高）。未解析对局 extra 为 None。"""
+    vals = sorted(((r["p"]["player_slot"],
+                    (r["extra"].get(key) if r.get("extra") else 0) or 0) for r in rows),
                   key=lambda x: x[1], reverse=True)
     for i, (s, _) in enumerate(vals):
         if s == slot:
@@ -987,7 +988,7 @@ def build_payload(match, analysis, en, cn, user_account_id=None):
         }
 
     suspect = None
-    if analysis["suspects"]:
+    if analysis["parsed"] and analysis["suspects"]:
         s = analysis["suspects"][0]
         sp = s["p"]
         srow = next(r for r in rows if r["p"]["player_slot"] == sp["player_slot"])

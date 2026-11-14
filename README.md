@@ -56,6 +56,14 @@ python3 dota_blame.py 9088291413 --user 181585714 --refresh  # 解析完成后�
 
 环境变量：`PORT`（默认 8000）、`HOST`（默认 0.0.0.0）、`CACHE_TTL`（默认 300 秒）、`DOTA_BLAME_FONT`（自定义中文字体路径）。
 
+## 测试
+
+```bash
+python3 -m unittest discover -s tests -v
+```
+
+包含未解析对局（`extra=None`）的回归测试。
+
 ## 部署
 
 后端需要访问 OpenDota，**国内直连 opendota 时好时坏**，所以部署位置比部署方式更重要：
