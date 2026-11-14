@@ -23,6 +23,7 @@ DOTA2 五黑赛后复盘工具。丢一个对局 ID 进去，自动从 OpenDota 
 - **对面为什么赢**：数据最好的 3 个对手
 - **分享卡片**：一键生成 1080×1500 PNG
 - 未解析对局自动降级为聚合数据版，并自动向 OpenDota 提交解析请求
+- **解析完成自动提示**：未解析时每 15 秒轮询一次，解析好了自动弹提示并升级为精确版
 
 ## 快速开始
 
@@ -49,6 +50,7 @@ python3 dota_blame.py 9088291413 --user 181585714 --refresh  # 解析完成后�
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | GET | `/api/health` | 健康检查 |
+| GET | `/api/status?match_id=...` | 轻量查询是否已被 OpenDota 解析（前端轮询用） |
 | GET | `/api/analyze?match_id=...&user_id=...` | 返回完整 JSON |
 | GET | `/api/card?match_id=...&user_id=...` | 返回 PNG 分享卡片 |
 | GET | `/api/report?match_id=...&user_id=...` | 返回 Markdown 判决书 |

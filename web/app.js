@@ -5,7 +5,7 @@
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
-  const state = { payload: null, matchId: null, userId: null, loadingTimer: null };
+  const state = { payload: null, matchId: null, userId: null, loadingTimer: null, pollTimer: null, pollCount: 0 };
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({
@@ -40,6 +40,7 @@
   async function analyze(matchId, userId, refresh) {
     state.matchId = matchId;
     state.userId = userId || null;
+    stopParsePolling();
 
     hide($("#error"));
     hide($("#result"));
@@ -79,6 +80,7 @@
       hide($("#loading"));
       show($("#result"));
       updateUrl();
+      if (!data.info.parsed) startParsePolling(matchId, userId);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e) {
       hide($("#loading"));
@@ -86,6 +88,66 @@
       show($("#error"));
     } finally {
       finishLoading();
+    }
+  }
+
+  /* ---------------- OpenDota 解析状态轮询 ---------------- */
+  function stopParsePolling() {
+    if (state.pollTimer) {
+      clearInterval(state.pollTimer);
+      state.pollTimer = null;
+    }
+    state.pollCount = 0;
+  }
+
+  function updateParseWaitText(text) {
+    const el = document.getElementById("parse-wait-text");
+    if (el) el.textContent = text;
+  }
+
+  function startParsePolling(matchId, userId) {
+    stopParsePolling();
+    state.pollCount = 0;
+    state.pollTimer = setInterval(async () => {
+      if (!state.payload || (state.payload.info && state.payload.info.parsed)) {
+        stopParsePolling();
+        return;
+      }
+      if (document.hidden) return; // 页面在后台就跳过这一轮
+      state.pollCount += 1;
+      if (state.pollCount > 40) { // 约 10 分钟
+        stopParsePolling();
+        updateParseWaitText("等待超时，可点「立即检查」或稍后手动重新分析");
+        return;
+      }
+      try {
+        const res = await fetch("/api/status?match_id=" + encodeURIComponent(matchId));
+        const d = await res.json();
+        if (d.ok && d.parsed) {
+          stopParsePolling();
+          toast("✅ OpenDota 解析完成，正在升级为精确版…");
+          analyze(matchId, userId, true);
+        } else {
+          updateParseWaitText("正在等待 OpenDota 解析…（每 15 秒自动检查，第 " + state.pollCount + " 次）");
+        }
+      } catch (e) {
+        // 网络抖动：忽略，下一轮再试
+      }
+    }, 15000);
+  }
+
+  async function checkParseNow() {
+    try {
+      const res = await fetch("/api/status?match_id=" + encodeURIComponent(state.matchId));
+      const d = await res.json();
+      if (d.ok && d.parsed) {
+        toast("✅ 解析完成，正在升级为精确版…");
+        analyze(state.matchId, state.userId, true);
+      } else {
+        toast("还没解析好，OpenDota 解析池还在排队，再等等");
+      }
+    } catch (e) {
+      toast("检查失败，稍后再试");
     }
   }
 
@@ -218,10 +280,14 @@
     let banner = "";
     if (!parsed) {
       banner = '<div class="crash-note" style="margin-bottom:14px;">⚠️ 本局 OpenDota 尚未解析，野区 / 死亡时间线 / 视野 / 装备等高级功能暂不可用。' +
-        '已自动提交解析请求，通常 1~10 分钟后可点「重新分析」升级为精确版。</div>';
+        '已自动提交解析请求：<b id="parse-wait-text">正在等待 OpenDota 解析…（每 15 秒自动检查）</b> ' +
+        '<button class="chip" id="parse-check" type="button" style="margin-left:8px;vertical-align:middle;">立即检查</button></div>';
     }
 
     $("#tabs").innerHTML = '<div class="tabs-nav">' + nav + "</div>" + banner + panels;
+
+    const parseCheck = $("#parse-check");
+    if (parseCheck) parseCheck.addEventListener("click", checkParseNow);
 
     $$("#tabs .tab-btn").forEach((btn) => {
       btn.addEventListener("click", () => {

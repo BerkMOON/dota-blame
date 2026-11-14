@@ -1063,6 +1063,21 @@ class MatchNotFound(ValueError):
     """对局不存在 / OpenDota 暂无数据"""
 
 
+def check_parsed(match_id):
+    """重新拉取该对局，返回是否已被 OpenDota 解析（给前端轮询用）。"""
+    try:
+        match = fetch_match(match_id, refresh=True)
+    except urllib.error.HTTPError as e:
+        if e.code in (400, 404):
+            raise MatchNotFound("对局 %s 不存在，或者 OpenDota 还没有收录这场比赛" % match_id)
+        raise
+    except urllib.error.URLError as e:
+        raise RuntimeError("连接 OpenDota 失败：%s" % e)
+    if not isinstance(match, dict):
+        raise MatchNotFound("对局 %s 不存在，或者 OpenDota 还没有收录这场比赛" % match_id)
+    return {"ok": True, "match_id": match_id, "parsed": is_parsed(match)}
+
+
 def run(match_id, user_account_id=None, refresh=False):
     """给后端调用：返回 payload（含 report_md）。出错抛异常。"""
     try:
@@ -1073,6 +1088,8 @@ def run(match_id, user_account_id=None, refresh=False):
         raise
     except urllib.error.URLError as e:
         raise RuntimeError("连接 OpenDota 失败：%s" % e)
+    if not isinstance(match, dict):
+        raise MatchNotFound("对局 %s 不存在，或者 OpenDota 还没有收录这场比赛" % match_id)
     if match.get("error"):
         raise MatchNotFound("OpenDota 返回错误：%s" % match.get("error"))
     parsed = is_parsed(match)

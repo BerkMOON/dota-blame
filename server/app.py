@@ -43,6 +43,9 @@ CACHE_TTL = int(os.environ.get("CACHE_TTL", "300"))
 _CACHE = {}
 _CACHE_LOCK = threading.Lock()
 
+_STATUS_CACHE = {}
+_STATUS_LOCK = threading.Lock()
+
 MIME = {
     ".html": "text/html; charset=utf-8",
     ".css": "text/css; charset=utf-8",
@@ -113,6 +116,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(200, {"ok": True, "service": "dota-blame", "time": time.time()})
             elif path == "/api/analyze":
                 self._api_analyze(qs)
+            elif path == "/api/status":
+                self._api_status(qs)
             elif path == "/api/card":
                 self._api_card(qs)
             elif path == "/api/report":
@@ -151,6 +156,22 @@ class Handler(BaseHTTPRequestHandler):
         match_id, user_id, refresh = self._params(qs)
         payload = _cached(match_id, user_id, refresh)
         self._json(200, payload)
+
+    def _api_status(self, qs):
+        try:
+            match_id = int((qs.get("match_id") or [""])[0])
+        except ValueError:
+            raise ValueError("match_id 必须是数字，比如 9088291413")
+        now = time.time()
+        with _STATUS_LOCK:
+            hit = _STATUS_CACHE.get(match_id)
+            if hit and now - hit[0] < 10:
+                self._json(200, hit[1])
+                return
+        result = dota_blame.check_parsed(match_id)
+        with _STATUS_LOCK:
+            _STATUS_CACHE[match_id] = (time.time(), result)
+        self._json(200, result)
 
     def _api_card(self, qs):
         match_id, user_id, refresh = self._params(qs)
